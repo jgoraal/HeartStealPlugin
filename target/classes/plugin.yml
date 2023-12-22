@@ -1,0 +1,24 @@
+name: HeartStealPlugin
+version: '69-gg'
+main: jgor.heartstealplugin.HeartStealPlugin
+api-version: '1.19'
+commands:
+  stuck:
+    description: Stuck players
+    usage: /<command>
+
+  undostuck:
+    description: Unstuck players
+    usage: /<command>
+
+  crafting:
+    description: Shows special items crafting
+    usage: /<command>
+
+  vanish:
+    description: Hides player from other players
+    usage: /<command>
+
+  rynek:
+    description: MarketPlace for players
+    usage: /<command>

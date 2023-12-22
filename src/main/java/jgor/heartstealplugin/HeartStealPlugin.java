@@ -6,11 +6,10 @@ import jgor.heartstealplugin.CraftingSpecialItemsGUI.GuiListener;
 import jgor.heartstealplugin.UnstuckCommand.UnStuckCommand;
 import jgor.heartstealplugin.auctions.AuctionCommand;
 import jgor.heartstealplugin.auctions.AuctionListeners;
+import jgor.heartstealplugin.fireSpreadCancel.FireSpreadCancel;
 import jgor.heartstealplugin.vanish.Vanish;
 import jgor.heartstealplugin.vanish.VanishListener;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class HeartStealPlugin extends JavaPlugin {
@@ -25,6 +24,7 @@ public final class HeartStealPlugin extends JavaPlugin {
     private final VanishListener vanishListener = new VanishListener();
     private final AuctionCommand auctionCommand = new AuctionCommand();
     private final AuctionListeners auctionListeners = new AuctionListeners();
+    private final FireSpreadCancel fireSpreadCancel = new FireSpreadCancel();
 
 
 
@@ -40,6 +40,7 @@ public final class HeartStealPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(vanishListener, this);
         getServer().getPluginManager().registerEvents(auctionListeners, this);
+        getServer().getPluginManager().registerEvents(fireSpreadCancel, this);
         getCommand("stuck").setExecutor(stuckCommand);
         getCommand("undostuck").setExecutor(unStuckCommand);
         getCommand("crafting").setExecutor(craftingSpecialItemsGUI);
