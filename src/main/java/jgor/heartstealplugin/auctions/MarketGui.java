@@ -4,30 +4,43 @@ import jgor.heartstealplugin.HeartStealPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.scheduler.BukkitScheduler;
 
+
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public class MarketGui {
+public class MarketGui implements Serializable {
 
-    private static final ArrayList<HashMap<UUID, ItemStack>> playerSellItemList = new ArrayList<>();
+    public static  ArrayList<HashMap<UUID, ItemStack>> playerSellItemList = new ArrayList<>();
 
-    private static final ArrayList<HashMap<UUID, ArrayList<ItemStack>>> playerSellItemPrice = new ArrayList<>();
+    public static ArrayList<HashMap<UUID, ArrayList<ItemStack>>> playerSellItemPrice = new ArrayList<>();
+
+    public static ArrayList<HashMap<UUID,Date>> timeItemExpired = new ArrayList<>();
 
     public static HashMap<UUID, ArrayList<ItemStack>> sellingPlayerItems = new HashMap<>();
 
     public static HashMap<UUID, ArrayList<ItemStack>> buyingPlayerItems = new HashMap<>();
 
+    public static HashMap<UUID, ArrayList<ItemStack>> expiredItems = new HashMap<>();
+
     private static int lastPage;
+
+    public static int taskID;
+
+
+    public MarketGui() {
+    }
 
     public static void openMarketInventory(Player player, int page) {
 
@@ -44,7 +57,9 @@ public class MarketGui {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage);
+                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+
+                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
 
 
@@ -64,7 +79,9 @@ public class MarketGui {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage);
+                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+
+                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
 
 
@@ -84,7 +101,9 @@ public class MarketGui {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage);
+                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+
+                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
 
 
@@ -104,7 +123,9 @@ public class MarketGui {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage);
+                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+
+                placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
 
 
@@ -141,6 +162,18 @@ public class MarketGui {
 
         return new ArrayList<>(subList);
 
+    }
+
+    private static ArrayList<HashMap<UUID,Date>> getExpiredTime(int startIndex, int endIndex) {
+        ArrayList<HashMap<UUID,Date>> allTimes = new ArrayList<>();
+
+        for (HashMap<UUID,Date> map : timeItemExpired) {
+            allTimes.add(new HashMap<>(map));
+        }
+
+        List<HashMap<UUID,Date>> subList = allTimes.subList(startIndex,Math.min(endIndex,allTimes.size()));
+
+        return new ArrayList<>(subList);
     }
 
     private static void countPages() {
@@ -211,7 +244,7 @@ public class MarketGui {
     }
 
 
-    public static void placeItemsInMarket(Inventory menu, ArrayList<HashMap<UUID, ItemStack>> itemsForPage, ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage) {
+    public static void placeItemsInMarket(Inventory menu, ArrayList<HashMap<UUID, ItemStack>> itemsForPage, ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage, ArrayList<HashMap<UUID, Date>> itemsTimeExpired) {
 
         ArrayList<UUID> sellingPlayer = new ArrayList<>();
 
@@ -227,7 +260,8 @@ public class MarketGui {
                     ItemMeta meta = k.getItemMeta();
                     UUID sellingPlayerUUID = sellingPlayer.get(menuIndex);
                     int amount = itemsForPage.get(menuIndex).get(sellingPlayerUUID).getAmount();
-                    k.setItemMeta(createMeta(meta, sellingPlayer.get(menuIndex), itemsForPage.get(menuIndex).get(sellingPlayerUUID), itemsPricesForPage.get(menuIndex).get(sellingPlayer.get(menuIndex))));
+                    Date expiredTime = itemsTimeExpired.get(menuIndex).get(sellingPlayerUUID);
+                    k.setItemMeta(createMeta(meta, sellingPlayer.get(menuIndex), itemsForPage.get(menuIndex).get(sellingPlayerUUID), itemsPricesForPage.get(menuIndex).get(sellingPlayer.get(menuIndex)), expiredTime));
                     menu.setItem(menuIndex, k);
                     // Increment the menu index
                 }
@@ -236,7 +270,7 @@ public class MarketGui {
         }
     }
 
-    private static ItemMeta createMeta(ItemMeta meta, UUID playerUUID, ItemStack itemAmount, ArrayList<ItemStack> priceList) {
+    private static ItemMeta createMeta(ItemMeta meta, UUID playerUUID, ItemStack itemAmount, ArrayList<ItemStack> priceList, Date expiredTime) {
         List<String> lore = meta.getLore();
 
         if (lore == null) {
@@ -250,11 +284,8 @@ public class MarketGui {
         lore.add(ChatColor.DARK_PURPLE + "✿ " + ChatColor.RESET + ChatColor.GRAY + "Wystawiony przez: " + ChatColor.RESET + ChatColor.AQUA + playerName + ChatColor.RESET + ChatColor.DARK_PURPLE + " ✿");
         lore.add(ChatColor.DARK_PURPLE + "❈ " + ChatColor.RESET + ChatColor.GRAY + "W ilości → " + ChatColor.RESET + ChatColor.AQUA + itemAmount.getAmount() + ChatColor.RESET + ChatColor.DARK_PURPLE + "  ❈");
 
-        // Pobierz ItemMeta z itemAmount
-
-
         lore.add(" ");
-        lore.add(ChatColor.GRAY + "Wygasa za: " + ChatColor.RESET + ChatColor.AQUA + Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)));
+        lore.add(ChatColor.GRAY + "Wygasa za: " + ChatColor.RESET + ChatColor.AQUA + formatExpirationTime(expiredTime));
         lore.add(" ");
         lore.add(ChatColor.DARK_PURPLE + "☄ " + ChatColor.RESET + ChatColor.GRAY + "Wystawiony za: " + ChatColor.RESET + ChatColor.DARK_PURPLE + " ☄");
 
@@ -269,12 +300,38 @@ public class MarketGui {
         return meta;
     }
 
+    private static String formatExpirationTime(Date expirationDate) {
+        if (expirationDate == null) {
+            return "N/A"; // or any default value or message
+        }
+
+        long timeDiffInMillis = expirationDate.getTime() - System.currentTimeMillis();
+
+        // Check if the expiration time is negative (in the past)
+        if (timeDiffInMillis < 0) {
+            return "Wygasł";
+        }
+
+        long hours = TimeUnit.MILLISECONDS.toHours(timeDiffInMillis);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(timeDiffInMillis - TimeUnit.HOURS.toMillis(hours));
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(timeDiffInMillis - TimeUnit.HOURS.toMillis(hours) - TimeUnit.MINUTES.toMillis(minutes));
+
+        if (hours > 0) {
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format("%02d:%02d", minutes, seconds);
+        }
+    }
+
+
+
     public static void placeItemIntoMarket(Player player) {
 
         UUID playerUUID = player.getUniqueId();
 
         ArrayList<ItemStack> sellingItems = AuctionCommand.getPlayerSellingItems().get(playerUUID);
         ArrayList<Integer> wishedAmounts = AuctionCommand.getPlayerWishedAmountToRemove().get(playerUUID);
+
 
         ArrayList<ItemStack> priceItems = AuctionListeners.playerPriceItemList.get(playerUUID);
 
@@ -303,6 +360,82 @@ public class MarketGui {
 
         //TODO add playerPriceList
 
+
+        //TODO Expire item time
+        HashMap<UUID,Date> expiredTime = new HashMap<>();
+
+        expiredTime.put(playerUUID,Date.from(Instant.now().plus(5,ChronoUnit.HOURS)));
+        timeItemExpired.add(expiredTime);
+        //TODO Expire item time
+
+
+    }
+
+    public static void cleanExpiredItems() {
+        Bukkit.getLogger().info("---> Usuwam wygasłe item <---");
+
+        Iterator<HashMap<UUID, Date>> iterator = timeItemExpired.iterator();
+
+        while (iterator.hasNext()) {
+            HashMap<UUID, Date> itemTimeMap = iterator.next();
+            UUID playerUUID = itemTimeMap.keySet().iterator().next();
+            Date expirationDate = itemTimeMap.get(playerUUID);
+
+            if (isExpired(expirationDate)) {
+
+                // Remove the expired item from playerSellItemList, playerSellItemPrice, and timeItemExpired
+                removeExpiredItem(playerUUID);
+                iterator.remove(); // Remove the entry from the iterator
+            }
+        }
+    }
+
+    private static void removeExpiredItem(UUID playerUUID) {
+        int indexToRemove = -1;
+
+        // Find the index of the expired item
+        for (int i = 0; i < playerSellItemList.size(); i++) {
+            HashMap<UUID, ItemStack> itemMap = playerSellItemList.get(i);
+            if (itemMap.containsKey(playerUUID)) {
+                indexToRemove = i;
+
+                break;
+            }
+        }
+
+        // Remove the item from playerSellItemList and playerSellItemPrice
+        if (indexToRemove != -1) {
+            Player playerTosendMessage = Bukkit.getPlayer(playerUUID);
+            playerTosendMessage.sendTitle(ChatColor.RED + "Twój przedmiot na rynku wygasł",ChatColor.GOLD + "Odbierz przedmioty na /rynek",10,35,20);
+
+            if(expiredItems.containsKey(playerUUID)) {
+                ItemStack itemToRemove = playerSellItemList.get(indexToRemove).get(playerUUID).clone();
+
+                expiredItems.get(playerUUID).add(itemToRemove);
+            } else {
+                ArrayList<ItemStack> list = new ArrayList<>();
+                ItemStack itemToRemove = playerSellItemList.get(indexToRemove).get(playerUUID).clone();
+                list.add(itemToRemove);
+                expiredItems.put(playerUUID,list);
+            }
+
+            playerSellItemList.remove(indexToRemove);
+            playerSellItemPrice.remove(indexToRemove);
+        }
+    }
+
+
+
+    private static boolean isExpired(Date expirationDate) {
+        return expirationDate.before(new Date());
+    }
+
+    public static void scheduleItemExpirationCheck() {
+        BukkitScheduler scheduler = Bukkit.getScheduler();
+        taskID = scheduler.scheduleSyncRepeatingTask(HeartStealPlugin.getInstance(), MarketGui::cleanExpiredItems, 1L, 20L * 60L * 5L); // Sprawdza co 2 minuty (20 * 60 * 2 ticków)
+
+        // Możesz zachować ID zadania, aby je później anulować, jeśli to konieczne
+        // HeartStealPlugin.getInstance().setExpirationCheckTaskId(taskId);
     }
 
     public static boolean hasPlayerEnoughToBuy(Player player, int slot, int page) {
@@ -324,7 +457,7 @@ public class MarketGui {
 
         int sumAmountPlayerShouldHaveToBuy = priceList.stream().mapToInt(ItemStack::getAmount).sum();
 
-        Bukkit.getLogger().info("Potrzebna wartosc " + sumAmountPlayerShouldHaveToBuy);
+
 
         int amount = 0;
         for (ItemStack itemInInventory : player.getInventory().getContents()) {
@@ -337,7 +470,7 @@ public class MarketGui {
             }
         }
 
-        Bukkit.getLogger().info("Ile masz " + amount);
+
 
         if (sumAmountPlayerShouldHaveToBuy > amount) {
             player.sendMessage(ChatColor.RED + "Nie masz wystarczającej ilości przedmiotów, aby to kupić!");
@@ -346,6 +479,37 @@ public class MarketGui {
 
         return true;
     }
+
+    public static boolean hasTimeExpiredForItem(Player player, int slot, int page) {
+        int startIndex = (page - 1) * 45;
+        int endIndex = page * 45;
+
+        ArrayList<HashMap<UUID, Date>> timeForItemPage = getExpiredTime(startIndex, endIndex);
+
+        if (timeForItemPage.isEmpty() || slot < 0 || slot >= timeForItemPage.size()) {
+            // Handle the case when the list is empty or the slot is out of bounds.
+            // You may want to send an appropriate message or take necessary actions.
+            player.sendMessage(ChatColor.RED + "Invalid slot or no items on this page.");
+            openMarketInventory(player,AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
+            return false;
+        }
+
+        HashMap<UUID, Date> currentTimeToCheck = timeForItemPage.get(slot);
+        ArrayList<UUID> sellerUUIDs = new ArrayList<>(currentTimeToCheck.keySet());
+        UUID sellerUUID = sellerUUIDs.get(0);
+
+        Date dateToCheck = currentTimeToCheck.get(sellerUUID);
+
+        if (isExpired(dateToCheck)) {
+            player.sendMessage(ChatColor.RED + "Nie możesz kupić tego przedmiotu, ponieważ wygasł :(");
+            cleanExpiredItems();
+            openMarketInventory(player,AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
+            return false;
+        }
+
+        return true;
+    }
+
 
 
     public static void openConfirmBuyInventory(Player player) {
@@ -378,11 +542,14 @@ public class MarketGui {
 
         ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
+
         HashMap<UUID, ArrayList<ItemStack>> currentItemToBuy = itemsPricesForPage.get(slot);
 
         ArrayList<UUID> sellerUUIDs = new ArrayList<>(currentItemToBuy.keySet());
 
         ArrayList<ItemStack> priceList = currentItemToBuy.get(sellerUUIDs.get(0));
+
+        timeItemExpired.get(slot).remove(sellerUUIDs.get(0));
 
         Player sellingPlayer = Bukkit.getPlayer(sellerUUIDs.get(0));
         sellingPlayer.sendTitle(ChatColor.GREEN + "Ktoś kupił twój przedmiot", ChatColor.GOLD + "Odbierz itemy na /rynek", 10, 35, 25);
@@ -571,6 +738,31 @@ public class MarketGui {
 
     }
 
+
+    public static void openExpiredItemsIncentory(Player player) {
+        if(!expiredItems.isEmpty()) {
+            Inventory marketPlace = Bukkit.createInventory(player, 9 * 6, ChatColor.BOLD + "" + ChatColor.GOLD + "Rynek" + ChatColor.RESET + ChatColor.GOLD + " Odbierz swoje wygasłe przedmioty");
+
+            ArrayList<ItemStack> putExpiredItems = splitSellingItems(expiredItems.get(player.getUniqueId()));
+
+
+            Bukkit.getLogger().info(putExpiredItems.toString());
+
+
+            int index = 0;
+            for (ItemStack item : putExpiredItems) {
+                marketPlace.setItem(index,item);
+                index++;
+            }
+
+            player.openInventory(marketPlace);
+            player.setMetadata(AuctionListeners.MARKET_COLLECT_EXPIRED_ITEMS, new FixedMetadataValue(HeartStealPlugin.getInstance(), marketPlace));
+        } else {
+            player.sendMessage(ChatColor.RED + "Nie posiadasz jeszcze wygasłych itemów");
+        }
+
+    }
+
     private static void putItemForBuingPlayerItems(Inventory marketPlace, Player player) {
         ArrayList<ItemStack> itemsToPutOnCollect = buyingPlayerItems.get(player.getUniqueId());
 
@@ -608,12 +800,25 @@ public class MarketGui {
             ArrayList<ItemStack> items = sellingPlayerItems.get(uniqueId);
             if (slot >= 0 && slot < items.size()) {
                 items.remove(slot);
-                if (items.isEmpty()) {
+                if (items.isEmpty())
+                {
                     sellingPlayerItems.remove(uniqueId);
                 }
             }
         }
+
     }
 
 
+    public static void removeExpiredItemsToCollect(UUID uniqueId, int slot) {
+        if(expiredItems.containsKey(uniqueId)) {
+            ArrayList<ItemStack> items = expiredItems.get(uniqueId);
+            if(slot >= 0 && slot < items.size()) {
+                items.remove(slot);
+                if(items.isEmpty()) {
+                    expiredItems.remove(uniqueId);
+                }
+            }
+        }
+    }
 }

@@ -6,11 +6,15 @@ import jgor.heartstealplugin.CraftingSpecialItemsGUI.GuiListener;
 import jgor.heartstealplugin.UnstuckCommand.UnStuckCommand;
 import jgor.heartstealplugin.auctions.AuctionCommand;
 import jgor.heartstealplugin.auctions.AuctionListeners;
+import jgor.heartstealplugin.auctions.MarketGui;
+import jgor.heartstealplugin.auctions.MyPluginDataHandler;
 import jgor.heartstealplugin.fireSpreadCancel.FireSpreadCancel;
 import jgor.heartstealplugin.vanish.Vanish;
 import jgor.heartstealplugin.vanish.VanishListener;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
+
 
 public final class HeartStealPlugin extends JavaPlugin {
 
@@ -33,6 +37,7 @@ public final class HeartStealPlugin extends JavaPlugin {
         getLogger().info(ChatColor.GREEN + "Plugin został włączony!");
         StuckCommand.getStuckPlayers().clear();
         createRecipes();
+
         heartStealListener.loadConfigData();
         getServer().getPluginManager().registerEvents(heartStealListener, this);
         getServer().getPluginManager().registerEvents(redemptionItem, this);
@@ -46,11 +51,14 @@ public final class HeartStealPlugin extends JavaPlugin {
         getCommand("crafting").setExecutor(craftingSpecialItemsGUI);
         getCommand("vanish").setExecutor(vanish);
         getCommand("rynek").setExecutor(auctionCommand);
+        MarketGui.scheduleItemExpirationCheck();
     }
 
 
     @Override
     public void onDisable() {
+        Bukkit.getScheduler().cancelTasks(HeartStealPlugin.getInstance());
+
         heartStealListener.saveConfigData();
     }
 

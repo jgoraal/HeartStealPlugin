@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.ItemStack;
@@ -26,8 +27,10 @@ public class AuctionListeners implements Listener {
     public static final String SELL_GUI_SELL_CONFIRM_MINUS = "MarketSellConfirmMinus";
     public static final String MARKET_BUY_CONFIRM = "MarketBuyConfirm";
     public static final String SELL_GUI_SELL_CONFIRM_STACK = "MarketSellConfirmStack";
-
+    public static final String MARKET_COLLECT_EXPIRED_ITEMS = "MarketCollectExpiredItems";
     public static final String MARKET_COLLECT_ITEMS = "MarketCollectItems";
+
+
 
     public static final int MAX_ITEM_AMOUNT = 2304;
 
@@ -108,19 +111,27 @@ public class AuctionListeners implements Listener {
                 }
             }
 
+            if (event.getSlot() == 49) {
+                if (event.getCurrentItem() != null) {
+                    player.closeInventory();
+                    MarketGui.openExpiredItemsIncentory(player);
+                }
+            }
 
 
             if (event.getSlot() >= 0 && event.getSlot() < 45) {
                 if (event.getCurrentItem() != null) {
-                    if (MarketGui.hasPlayerEnoughToBuy(player, event.getSlot(), playerCurrentMarketPage.get(player.getUniqueId()))) {
-                        if (MarketGui.buyingPlayerItems.containsKey(player.getUniqueId()) || MarketGui.sellingPlayerItems.containsKey(player.getUniqueId())) {
-                            player.sendMessage(ChatColor.RED + "Odbierz najpierw przedmioty, żeby dalej kupować");
-                        } else {
-                            playerSlotWantToBuy.put(player.getUniqueId(), event.getSlot());
+                    if (MarketGui.hasTimeExpiredForItem(player, event.getSlot(), playerCurrentMarketPage.get(player.getUniqueId()))) {
+                        if (MarketGui.hasPlayerEnoughToBuy(player, event.getSlot(), playerCurrentMarketPage.get(player.getUniqueId()))) {
+                            if (MarketGui.buyingPlayerItems.containsKey(player.getUniqueId()) || MarketGui.sellingPlayerItems.containsKey(player.getUniqueId())) {
+                                player.sendMessage(ChatColor.RED + "Odbierz najpierw przedmioty, żeby dalej kupować");
+                            } else {
+                                playerSlotWantToBuy.put(player.getUniqueId(), event.getSlot());
 
-                            player.closeInventory();
+                                player.closeInventory();
 
-                            MarketGui.openConfirmBuyInventory(player);
+                                MarketGui.openConfirmBuyInventory(player);
+                            }
                         }
                     }
                 }
@@ -133,7 +144,7 @@ public class AuctionListeners implements Listener {
             if (event.getSlot() == 14) {
                 player.closeInventory();
                 MarketGui.removeNeddedItems(player, playerSlotWantToBuy.get(player.getUniqueId()), playerCurrentMarketPage.get(player.getUniqueId()));
-                player.sendTitle(ChatColor.GREEN + "Pomyślnie zakupiłeś przedmiot/y",ChatColor.GOLD + "Odbierz swoje itemy na /rynek",10,35,20);
+                player.sendTitle(ChatColor.GREEN + "Pomyślnie zakupiłeś przedmiot/y", ChatColor.GOLD + "Odbierz swoje itemy na /rynek", 10, 35, 20);
             }
 
             if (event.getSlot() == 12) {
@@ -144,10 +155,15 @@ public class AuctionListeners implements Listener {
 
         } else if (player.hasMetadata(MARKET_COLLECT_ITEMS)) {
 
-            if(event.getCurrentItem() != null) {
+            if (event.getCurrentItem() != null) {
                 MarketGui.removeItemsToCollect(player.getUniqueId(), event.getSlot());
             }
 
+
+        } else if (player.hasMetadata(MARKET_COLLECT_EXPIRED_ITEMS)) {
+            if (event.getCurrentItem() != null) {
+                MarketGui.removeExpiredItemsToCollect(player.getUniqueId(),event.getSlot());
+            }
 
         } else if (player.hasMetadata(SELL_GUI)) {
             event.setCancelled(true);
@@ -249,7 +265,6 @@ public class AuctionListeners implements Listener {
                             playerPriceItemList.replace(playerUUID, itemList);
                         } else playerPriceItemList.put(playerUUID, itemList);
 
-                        sumPlayerItemAmount.remove(playerUUID);
                         SellGui.openSellGui(player);
 
                     } else if (sumPlayerItemAmount.get(playerUUID) < MAX_ITEM_AMOUNT) {
@@ -387,7 +402,7 @@ public class AuctionListeners implements Listener {
                             playerPriceItemList.replace(playerUUID, itemList);
                         } else playerPriceItemList.put(playerUUID, itemList);
 
-                        sumPlayerItemAmount.remove(playerUUID);
+
                         SellGui.openSellGui(player);
 
                     } else if (sumPlayerItemAmount.get(playerUUID) < MAX_ITEM_AMOUNT) {
@@ -562,7 +577,8 @@ public class AuctionListeners implements Listener {
                         }
 
 
-                        sumPlayerItemAmount.remove(playerUUID);
+                        //sumPlayerItemAmount.remove(playerUUID);
+                        SellGui.openSellGui(player);
 
                     } else if (sumPlayerItemAmount.get(playerUUID) < MAX_ITEM_AMOUNT) {
 
@@ -600,59 +616,75 @@ public class AuctionListeners implements Listener {
 
 
             if (event.getSlot() == 21) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 1);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 1);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
             if (event.getSlot() == 22) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 2);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 2);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
             if (event.getSlot() == 23) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 3);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 3);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
 
             if (event.getSlot() == 30) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 4);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 4);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
             if (event.getSlot() == 31) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 5);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 5);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
             if (event.getSlot() == 32) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 6);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 6);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
 
             if (event.getSlot() == 39) {
-
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 7);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 7);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
             }
 
             if (event.getSlot() == 40) {
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 8);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
 
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 8);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
             }
 
             if (event.getSlot() == 41) {
-
-                sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 9);
-                ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                if (event.getCurrentItem() != null) {
+                    sellItemAmountStack.replace(player.getUniqueId(), sellItemAmountStack.get(player.getUniqueId()) + 9);
+                    ConfirmSellGui.openStackConfirm(player, playerItemSellAmount.get(player.getUniqueId()));
+                }
             }
 
 
@@ -725,6 +757,11 @@ public class AuctionListeners implements Listener {
             player.removeMetadata(MARKET_COLLECT_ITEMS, HeartStealPlugin.getInstance());
         }
 
+        if (player.hasMetadata(MARKET_COLLECT_EXPIRED_ITEMS)) {
+            player.removeMetadata(MARKET_COLLECT_EXPIRED_ITEMS, HeartStealPlugin.getInstance());
+        }
+
+
 
         Bukkit.getScheduler().runTaskLater(HeartStealPlugin.getInstance(), () -> {
             if (!hasPlayerAnyMetaData(player)) {
@@ -741,7 +778,7 @@ public class AuctionListeners implements Listener {
     }
 
     private boolean hasPlayerAnyMetaData(Player player) {
-        return Arrays.stream(new String[]{MARKET_DEAFAULT, MARKET_COLLECT_ITEMS, MARKET_BUY_CONFIRM, MARKET_SELL_FINAL_CONFIRM, SELL_GUI, SELL_GUI_CATEGORY, SELL_GUI_SELL_CONFIRM, SELL_GUI_SELL_CONFIRM_MINUS, SELL_GUI_SELL_CONFIRM_STACK})
+        return Arrays.stream(new String[]{MARKET_DEAFAULT,MARKET_COLLECT_EXPIRED_ITEMS, MARKET_COLLECT_ITEMS, MARKET_BUY_CONFIRM, MARKET_SELL_FINAL_CONFIRM, SELL_GUI, SELL_GUI_CATEGORY, SELL_GUI_SELL_CONFIRM, SELL_GUI_SELL_CONFIRM_MINUS, SELL_GUI_SELL_CONFIRM_STACK})
                 .anyMatch(player::hasMetadata);
     }
 
