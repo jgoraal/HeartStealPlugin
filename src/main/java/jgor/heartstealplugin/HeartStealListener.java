@@ -365,82 +365,6 @@ public class HeartStealListener implements Listener {
                 UUID playerUUID = UUID.fromString(key.substring(13));
                 boolean isBanned = plugin.getConfig().getBoolean(key);
                 bannedPlayers.put(playerUUID, isBanned);
-            } else if (key.startsWith("playerSellItemList.")) {
-                UUID playerUUID = UUID.fromString(key.substring(19));
-                List<Map<String, Object>> itemDataList = (List<Map<String, Object>>) plugin.getConfig().getList(key);
-
-                if (itemDataList != null && !itemDataList.isEmpty()) {
-                    ItemStack item = ItemStack.deserialize(itemDataList.get(0));
-                    HashMap<UUID, ItemStack> map = new HashMap<>();
-                    map.put(playerUUID, item);
-                    MarketGui.playerSellItemList.add(new HashMap<>(map));
-                } else {
-                    // Handle the case when the list is null or empty
-                }
-            } else if (key.startsWith("playerSellItemPrice.")) {
-                UUID playerUUID = UUID.fromString(key.substring(19));
-                List<Map<String, Object>> itemDataList = (List<Map<String, Object>>) plugin.getConfig().getList(key);
-
-                if (itemDataList != null && !itemDataList.isEmpty()) {
-                    ArrayList<ItemStack> itemStackList = new ArrayList<>();
-                    for (Map<String, Object> itemData : itemDataList) {
-                        ItemStack item = ItemStack.deserialize(itemData);
-                        itemStackList.add(item);
-                    }
-                    HashMap<UUID, ArrayList<ItemStack>> map = new HashMap<>();
-                    map.put(playerUUID, itemStackList);
-                    MarketGui.playerSellItemPrice.add(new HashMap<>(map));
-                } else {
-                    // Handle the case when the list is null or empty
-                }
-            } else if (key.startsWith("timeItemExpired.")) {
-                UUID playerUUID = UUID.fromString(key.substring(16));
-                Date date = new Date(plugin.getConfig().getLong(key));
-                HashMap<UUID, Date> map = new HashMap<>();
-                map.put(playerUUID, date);
-                MarketGui.timeItemExpired.add(new HashMap<>(map));
-            } else if (key.startsWith("sellingPlayerItems.")) {
-                UUID playerUUID = UUID.fromString(key.substring(18));
-                List<Map<String, Object>> itemDataList = (List<Map<String, Object>>) plugin.getConfig().getList(key);
-
-                if (itemDataList != null && !itemDataList.isEmpty()) {
-                    ArrayList<ItemStack> itemStackList = new ArrayList<>();
-                    for (Map<String, Object> itemData : itemDataList) {
-                        ItemStack item = ItemStack.deserialize(itemData);
-                        itemStackList.add(item);
-                    }
-                    MarketGui.sellingPlayerItems.put(playerUUID, itemStackList);
-                } else {
-                    // Handle the case when the list is null or empty
-                }
-            } else if (key.startsWith("buyingPlayerItems.")) {
-                UUID playerUUID = UUID.fromString(key.substring(18));
-                List<Map<String, Object>> itemDataList = (List<Map<String, Object>>) plugin.getConfig().getList(key);
-
-                if (itemDataList != null && !itemDataList.isEmpty()) {
-                    ArrayList<ItemStack> itemStackList = new ArrayList<>();
-                    for (Map<String, Object> itemData : itemDataList) {
-                        ItemStack item = ItemStack.deserialize(itemData);
-                        itemStackList.add(item);
-                    }
-                    MarketGui.buyingPlayerItems.put(playerUUID, itemStackList);
-                } else {
-                    // Handle the case when the list is null or empty
-                }
-            } else if (key.startsWith("expiredItems.")) {
-                UUID playerUUID = UUID.fromString(key.substring(13));
-                List<Map<String, Object>> itemDataList = (List<Map<String, Object>>) plugin.getConfig().getList(key);
-
-                if (itemDataList != null && !itemDataList.isEmpty()) {
-                    ArrayList<ItemStack> itemStackList = new ArrayList<>();
-                    for (Map<String, Object> itemData : itemDataList) {
-                        ItemStack item = ItemStack.deserialize(itemData);
-                        itemStackList.add(item);
-                    }
-                    MarketGui.expiredItems.put(playerUUID, itemStackList);
-                } else {
-                    // Handle the case when the list is null or empty
-                }
             }
         }
     }
@@ -452,52 +376,6 @@ public class HeartStealListener implements Listener {
         }
         for (Map.Entry<UUID, Boolean> entry : bannedPlayers.entrySet()) {
             plugin.getConfig().set("PlayerBanned." + entry.getKey(), entry.getValue());
-        }
-
-        for (HashMap<UUID, ItemStack> list : MarketGui.playerSellItemList) {
-            for (Map.Entry<UUID, ItemStack> entry : list.entrySet()) {
-                plugin.getConfig().set("playerSellItemList." + entry.getKey(), entry.getValue().serialize());
-            }
-        }
-
-        for (HashMap<UUID, ArrayList<ItemStack>> list : MarketGui.playerSellItemPrice) {
-            for (Map.Entry<UUID, ArrayList<ItemStack>> entry : list.entrySet()) {
-                List<Map<String, Object>> itemDataList = new ArrayList<>();
-                for (ItemStack item : entry.getValue()) {
-                    itemDataList.add(item.serialize());
-                }
-                plugin.getConfig().set("playerSellItemPrice." + entry.getKey(), itemDataList);
-            }
-        }
-
-        for (HashMap<UUID, Date> list : MarketGui.timeItemExpired) {
-            for (Map.Entry<UUID, Date> entry : list.entrySet()) {
-                plugin.getConfig().set("timeItemExpired." + entry.getKey(), entry.getValue().getTime());
-            }
-        }
-
-        for (Map.Entry<UUID, ArrayList<ItemStack>> entry : MarketGui.sellingPlayerItems.entrySet()) {
-            List<Map<String, Object>> itemDataList = new ArrayList<>();
-            for (ItemStack item : entry.getValue()) {
-                itemDataList.add(item.serialize());
-            }
-            plugin.getConfig().set("sellingPlayerItems." + entry.getKey(), itemDataList);
-        }
-
-        for (Map.Entry<UUID, ArrayList<ItemStack>> entry : MarketGui.buyingPlayerItems.entrySet()) {
-            List<Map<String, Object>> itemDataList = new ArrayList<>();
-            for (ItemStack item : entry.getValue()) {
-                itemDataList.add(item.serialize());
-            }
-            plugin.getConfig().set("buyingPlayerItems." + entry.getKey(), itemDataList);
-        }
-
-        for (Map.Entry<UUID, ArrayList<ItemStack>> entry : MarketGui.expiredItems.entrySet()) {
-            List<Map<String, Object>> itemDataList = new ArrayList<>();
-            for (ItemStack item : entry.getValue()) {
-                itemDataList.add(item.serialize());
-            }
-            plugin.getConfig().set("expiredItems." + entry.getKey(), itemDataList);
         }
 
         plugin.saveConfig();

@@ -1,9 +1,15 @@
 package jgor.heartstealplugin.auctions;
 
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import jgor.heartstealplugin.HeartStealPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -11,22 +17,27 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 
 
-import java.io.Serializable;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
 public class MarketGui implements Serializable {
 
-    public static  ArrayList<HashMap<UUID, ItemStack>> playerSellItemList = new ArrayList<>();
+    public static ArrayList<HashMap<UUID, ItemStack>> playerSellItemList = new ArrayList<>();
 
     public static ArrayList<HashMap<UUID, ArrayList<ItemStack>>> playerSellItemPrice = new ArrayList<>();
 
-    public static ArrayList<HashMap<UUID,Date>> timeItemExpired = new ArrayList<>();
+    public static ArrayList<HashMap<UUID, Date>> timeItemExpired = new ArrayList<>();
 
     public static HashMap<UUID, ArrayList<ItemStack>> sellingPlayerItems = new HashMap<>();
 
@@ -38,9 +49,6 @@ public class MarketGui implements Serializable {
 
     public static int taskID;
 
-
-    public MarketGui() {
-    }
 
     public static void openMarketInventory(Player player, int page) {
 
@@ -57,7 +65,7 @@ public class MarketGui implements Serializable {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+                ArrayList<HashMap<UUID, Date>> itemsTimeExpired = getExpiredTime(startIndex, endIndex);
 
                 placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
@@ -79,7 +87,7 @@ public class MarketGui implements Serializable {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+                ArrayList<HashMap<UUID, Date>> itemsTimeExpired = getExpiredTime(startIndex, endIndex);
 
                 placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
@@ -101,7 +109,7 @@ public class MarketGui implements Serializable {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+                ArrayList<HashMap<UUID, Date>> itemsTimeExpired = getExpiredTime(startIndex, endIndex);
 
                 placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
@@ -123,7 +131,7 @@ public class MarketGui implements Serializable {
 
                 ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-                ArrayList<HashMap<UUID,Date>> itemsTimeExpired = getExpiredTime(startIndex,endIndex);
+                ArrayList<HashMap<UUID, Date>> itemsTimeExpired = getExpiredTime(startIndex, endIndex);
 
                 placeItemsInMarket(marketPlace, itemsForPage, itemsPricesForPage, itemsTimeExpired);
             }
@@ -164,25 +172,24 @@ public class MarketGui implements Serializable {
 
     }
 
-    private static ArrayList<HashMap<UUID,Date>> getExpiredTime(int startIndex, int endIndex) {
-        ArrayList<HashMap<UUID,Date>> allTimes = new ArrayList<>();
+    private static ArrayList<HashMap<UUID, Date>> getExpiredTime(int startIndex, int endIndex) {
+        ArrayList<HashMap<UUID, Date>> allTimes = new ArrayList<>();
 
-        for (HashMap<UUID,Date> map : timeItemExpired) {
+        for (HashMap<UUID, Date> map : timeItemExpired) {
             allTimes.add(new HashMap<>(map));
         }
 
-        List<HashMap<UUID,Date>> subList = allTimes.subList(startIndex,Math.min(endIndex,allTimes.size()));
+        List<HashMap<UUID, Date>> subList = allTimes.subList(startIndex, Math.min(endIndex, allTimes.size()));
 
         return new ArrayList<>(subList);
     }
 
     private static void countPages() {
-        int size = playerSellItemList.stream().mapToInt(list -> list.size()).sum();
+        int size = playerSellItemList.stream().mapToInt(HashMap::size).sum();
         if (size == 0) lastPage = 1;
         else lastPage = (size / 45) + ((size % 45 != 0) ? 1 : 0);
 
     }
-
 
     private static void schematicBottomMarketMenu(Inventory menu, Player player, boolean flagToBoughtItems, boolean flagToPreviousPage, boolean flagToNextPage) {
         ItemStack white = new ItemStack(Material.WHITE_STAINED_GLASS_PANE);
@@ -323,8 +330,6 @@ public class MarketGui implements Serializable {
         }
     }
 
-
-
     public static void placeItemIntoMarket(Player player) {
 
         UUID playerUUID = player.getUniqueId();
@@ -362,9 +367,9 @@ public class MarketGui implements Serializable {
 
 
         //TODO Expire item time
-        HashMap<UUID,Date> expiredTime = new HashMap<>();
+        HashMap<UUID, Date> expiredTime = new HashMap<>();
 
-        expiredTime.put(playerUUID,Date.from(Instant.now().plus(5,ChronoUnit.HOURS)));
+        expiredTime.put(playerUUID, Date.from(Instant.now().plus(5, ChronoUnit.HOURS)));
         timeItemExpired.add(expiredTime);
         //TODO Expire item time
 
@@ -374,7 +379,7 @@ public class MarketGui implements Serializable {
     public static void cleanExpiredItems() {
         Bukkit.getLogger().info("---> Usuwam wygasłe item <---");
 
-        Iterator<HashMap<UUID, Date>> iterator = timeItemExpired.iterator();
+        /*Iterator<HashMap<UUID, Date>> iterator = timeItemExpired.iterator();
 
         while (iterator.hasNext()) {
             HashMap<UUID, Date> itemTimeMap = iterator.next();
@@ -387,7 +392,19 @@ public class MarketGui implements Serializable {
                 removeExpiredItem(playerUUID);
                 iterator.remove(); // Remove the entry from the iterator
             }
+        }*/
+
+        for (HashMap<UUID, Date> map : timeItemExpired) {
+            for (UUID playerUUID : map.keySet()) {
+                Date expirationDate = map.get(playerUUID);
+
+                if (isExpired(expirationDate)) {
+                    removeExpiredItem(playerUUID);
+                    map.remove(playerUUID);
+                }
+            }
         }
+
     }
 
     private static void removeExpiredItem(UUID playerUUID) {
@@ -406,9 +423,9 @@ public class MarketGui implements Serializable {
         // Remove the item from playerSellItemList and playerSellItemPrice
         if (indexToRemove != -1) {
             Player playerTosendMessage = Bukkit.getPlayer(playerUUID);
-            playerTosendMessage.sendTitle(ChatColor.RED + "Twój przedmiot na rynku wygasł",ChatColor.GOLD + "Odbierz przedmioty na /rynek",10,35,20);
+            playerTosendMessage.sendTitle(ChatColor.RED + "Twój przedmiot na rynku wygasł", ChatColor.GOLD + "Odbierz przedmioty na /rynek", 10, 35, 20);
 
-            if(expiredItems.containsKey(playerUUID)) {
+            if (expiredItems.containsKey(playerUUID)) {
                 ItemStack itemToRemove = playerSellItemList.get(indexToRemove).get(playerUUID).clone();
 
                 expiredItems.get(playerUUID).add(itemToRemove);
@@ -416,15 +433,13 @@ public class MarketGui implements Serializable {
                 ArrayList<ItemStack> list = new ArrayList<>();
                 ItemStack itemToRemove = playerSellItemList.get(indexToRemove).get(playerUUID).clone();
                 list.add(itemToRemove);
-                expiredItems.put(playerUUID,list);
+                expiredItems.put(playerUUID, list);
             }
 
             playerSellItemList.remove(indexToRemove);
             playerSellItemPrice.remove(indexToRemove);
         }
     }
-
-
 
     private static boolean isExpired(Date expirationDate) {
         return expirationDate.before(new Date());
@@ -453,10 +468,9 @@ public class MarketGui implements Serializable {
             return false;
         }
 
-        ArrayList<ItemStack> priceList = currentItemToBuy.get(sellerUUIDs.get(0));
+        ArrayList<ItemStack> priceList = currentItemToBuy.get(sellerUUIDs.getFirst());
 
         int sumAmountPlayerShouldHaveToBuy = priceList.stream().mapToInt(ItemStack::getAmount).sum();
-
 
 
         int amount = 0;
@@ -469,7 +483,6 @@ public class MarketGui implements Serializable {
                 }
             }
         }
-
 
 
         if (sumAmountPlayerShouldHaveToBuy > amount) {
@@ -490,27 +503,25 @@ public class MarketGui implements Serializable {
             // Handle the case when the list is empty or the slot is out of bounds.
             // You may want to send an appropriate message or take necessary actions.
             player.sendMessage(ChatColor.RED + "Invalid slot or no items on this page.");
-            openMarketInventory(player,AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
+            openMarketInventory(player, AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
             return false;
         }
 
         HashMap<UUID, Date> currentTimeToCheck = timeForItemPage.get(slot);
         ArrayList<UUID> sellerUUIDs = new ArrayList<>(currentTimeToCheck.keySet());
-        UUID sellerUUID = sellerUUIDs.get(0);
+        UUID sellerUUID = sellerUUIDs.getFirst();
 
         Date dateToCheck = currentTimeToCheck.get(sellerUUID);
 
         if (isExpired(dateToCheck)) {
             player.sendMessage(ChatColor.RED + "Nie możesz kupić tego przedmiotu, ponieważ wygasł :(");
             cleanExpiredItems();
-            openMarketInventory(player,AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
+            openMarketInventory(player, AuctionListeners.playerCurrentMarketPage.get(player.getUniqueId()));
             return false;
         }
 
         return true;
     }
-
-
 
     public static void openConfirmBuyInventory(Player player) {
         Inventory marketPlace = Bukkit.createInventory(player, 9 * 3, ChatColor.BOLD + "" + ChatColor.GOLD + "Rynek" + ChatColor.RESET + ChatColor.GREEN + " Potwierdzenie zakupu");
@@ -535,23 +546,20 @@ public class MarketGui implements Serializable {
 
     public static void removeNeddedItems(Player player, int slot, int page) {
 
-        UUID playerUUID = player.getUniqueId();
+        //UUID playerUUID = player.getUniqueId();
 
         int startIndex = (page - 1) * 45;
         int endIndex = page * 45;
 
         ArrayList<HashMap<UUID, ArrayList<ItemStack>>> itemsPricesForPage = getItemsPricesForPage(startIndex, endIndex);
 
-
         HashMap<UUID, ArrayList<ItemStack>> currentItemToBuy = itemsPricesForPage.get(slot);
 
         ArrayList<UUID> sellerUUIDs = new ArrayList<>(currentItemToBuy.keySet());
 
-        ArrayList<ItemStack> priceList = currentItemToBuy.get(sellerUUIDs.get(0));
+        ArrayList<ItemStack> priceList = currentItemToBuy.get(sellerUUIDs.getFirst());
 
-        timeItemExpired.get(slot).remove(sellerUUIDs.get(0));
-
-        Player sellingPlayer = Bukkit.getPlayer(sellerUUIDs.get(0));
+        Player sellingPlayer = Bukkit.getPlayer(sellerUUIDs.getFirst());
         sellingPlayer.sendTitle(ChatColor.GREEN + "Ktoś kupił twój przedmiot", ChatColor.GOLD + "Odbierz itemy na /rynek", 10, 35, 25);
 
         for (ItemStack priceItem : priceList) {
@@ -591,7 +599,8 @@ public class MarketGui implements Serializable {
 
         HashMap<UUID, ArrayList<ItemStack>> sellingPlayer = playerSellItemPrice.get(targetIndex);
 
-        UUID uuidToRemove = new ArrayList<>(buyingPlayer.keySet()).get(0);
+
+        UUID uuidToRemove = new ArrayList<>(buyingPlayer.keySet()).getFirst();
 
 
         sellingPlayerItems.put(uuidToRemove, splitSellingItems(sellingPlayer.get(uuidToRemove))); //Sprzedawca
@@ -601,6 +610,7 @@ public class MarketGui implements Serializable {
 
         playerSellItemPrice.remove(targetIndex);
         playerSellItemList.remove(targetIndex);
+        timeItemExpired.remove(targetIndex);
 
     }
 
@@ -660,7 +670,6 @@ public class MarketGui implements Serializable {
         return result;
     }
 
-
     private static ArrayList<ItemStack> splitItems(ItemStack original) {
         ArrayList<ItemStack> result = new ArrayList<>();
 
@@ -718,7 +727,6 @@ public class MarketGui implements Serializable {
         return result;
     }
 
-
     public static void openCollectItemsInventory(Player player, boolean which) {
 
         Inventory marketPlace;
@@ -738,9 +746,8 @@ public class MarketGui implements Serializable {
 
     }
 
-
     public static void openExpiredItemsIncentory(Player player) {
-        if(!expiredItems.isEmpty()) {
+        if (!expiredItems.isEmpty()) {
             Inventory marketPlace = Bukkit.createInventory(player, 9 * 6, ChatColor.BOLD + "" + ChatColor.GOLD + "Rynek" + ChatColor.RESET + ChatColor.GOLD + " Odbierz swoje wygasłe przedmioty");
 
             ArrayList<ItemStack> putExpiredItems = splitSellingItems(expiredItems.get(player.getUniqueId()));
@@ -751,7 +758,7 @@ public class MarketGui implements Serializable {
 
             int index = 0;
             for (ItemStack item : putExpiredItems) {
-                marketPlace.setItem(index,item);
+                marketPlace.setItem(index, item);
                 index++;
             }
 
@@ -800,8 +807,7 @@ public class MarketGui implements Serializable {
             ArrayList<ItemStack> items = sellingPlayerItems.get(uniqueId);
             if (slot >= 0 && slot < items.size()) {
                 items.remove(slot);
-                if (items.isEmpty())
-                {
+                if (items.isEmpty()) {
                     sellingPlayerItems.remove(uniqueId);
                 }
             }
@@ -809,16 +815,268 @@ public class MarketGui implements Serializable {
 
     }
 
-
     public static void removeExpiredItemsToCollect(UUID uniqueId, int slot) {
-        if(expiredItems.containsKey(uniqueId)) {
+        if (expiredItems.containsKey(uniqueId)) {
             ArrayList<ItemStack> items = expiredItems.get(uniqueId);
-            if(slot >= 0 && slot < items.size()) {
+            if (slot >= 0 && slot < items.size()) {
                 items.remove(slot);
-                if(items.isEmpty()) {
+                if (items.isEmpty()) {
                     expiredItems.remove(uniqueId);
                 }
             }
         }
     }
+
+    public static String itemStackArrayToBase64(ItemStack[] items) throws IllegalStateException {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream);
+
+            for (int i = 0; i < items.length; i++) {
+                dataOutput.writeObject(items[i]);
+            }
+
+            dataOutput.close();
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+
+        } catch (Exception e) {
+            throw new IllegalStateException("Nie mozna przekształcić itemstack array do base64", e);
+        }
+    }
+
+    public static ItemStack[] itemStackArrayFromBase64(String data) throws IOException {
+        try {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
+            BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream);
+
+            int size = dataInput.readInt(); // Read the size of the array
+            ItemStack[] items = new ItemStack[size];
+
+            // Przeczytaj zserializowane itemstacky
+            for (int i = 0; i < size; i++) {
+                items[i] = (ItemStack) dataInput.readObject();
+            }
+
+            dataInput.close();
+            return items;
+        } catch (ClassNotFoundException e) {
+            throw new IOException("Nie można zdekodować klasy typu", e);
+        }
+    }
+
+
+    public static void saveData_SellingPlayerItemList() {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Class.class, new ClassTypeAdapter())
+                .create();
+
+        Type type = new TypeToken<ArrayList<HashMap<String, Map<String, Object>>>>() {
+        }.getType();
+
+        ArrayList<HashMap<String, Map<String, Object>>> serializedPlayerSellItemList = new ArrayList<>();
+
+        for (HashMap<UUID, ItemStack> map : playerSellItemList) {
+            for (Map.Entry<UUID, ItemStack> entry : map.entrySet()) {
+                Map<String, Object> serializedItemStack = entry.getValue().serialize();
+                Bukkit.getLogger().info(serializedItemStack + "");
+                HashMap<String, Map<String, Object>> serializedMap = new HashMap<>();
+                serializedMap.put(entry.getKey().toString(), serializedItemStack);
+                serializedPlayerSellItemList.add(serializedMap);
+            }
+
+        }
+
+        try (FileWriter writer = new FileWriter(HeartStealPlugin.getInstance().getDataFolder().getAbsoluteFile() + "/player_sell_item_list_data.json")) {
+            gson.toJson(serializedPlayerSellItemList, type, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void loadData_SellingPlayerItemList() {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Class.class, new ClassTypeAdapter())
+                .create();
+        Type type = new TypeToken<ArrayList<HashMap<String, Map<String, Object>>>>() {
+        }.getType();
+
+        try (FileReader reader = new FileReader(HeartStealPlugin.getInstance().getDataFolder().getAbsoluteFile() + "/player_sell_item_list_data.json")) {
+            ArrayList<HashMap<String, Map<String, Object>>> serializedPlayerSellList = gson.fromJson(reader, type);
+
+            for (HashMap<String, Map<String, Object>> map : serializedPlayerSellList) {
+                for (Map.Entry<String, Map<String, Object>> entry : map.entrySet()) {
+                    Map<String, Object> serializedItem = entry.getValue();
+                    HashMap<UUID, ItemStack> deserialized = new HashMap<>();
+                    deserialized.put(UUID.fromString(entry.getKey()), ItemDeserialiser.deserialise(serializedItem));
+                    playerSellItemList.add(deserialized);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void saveData_SellingPlayerPriceList() {
+        Gson gson = new Gson();
+
+        Type type = new TypeToken<ArrayList<HashMap<String, List<Map<String, Object>>>>>() {
+        }.getType();
+
+        ArrayList<HashMap<String, List<Map<String, Object>>>> serializedPlayerPriceList = new ArrayList<>();
+
+        for (HashMap<UUID, ArrayList<ItemStack>> map : playerSellItemPrice) {
+            for (Map.Entry<UUID, ArrayList<ItemStack>> entry : map.entrySet()) {
+                List<Map<String, Object>> serializedItemStackList = new ArrayList<>();
+                for (ItemStack item : entry.getValue()) {
+                    serializedItemStackList.add(item.serialize());
+                }
+                HashMap<String ,List<Map<String ,Object>>> serialMap =new HashMap<>();
+                serialMap.put(entry.getKey().toString(),serializedItemStackList);
+
+                serializedPlayerPriceList.add(serialMap);
+            }
+        }
+
+        try (FileWriter writer = new FileWriter(HeartStealPlugin.getInstance().getDataFolder() + "/player_sell_price_item_list.json")) {
+            gson.toJson(serializedPlayerPriceList, type, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void loadData_SellingPlayerPriceList() {
+        Gson gson = new Gson();
+
+        Type type = new TypeToken<ArrayList<HashMap<String, List<Map<String, Object>>>>>() {
+        }.getType();
+
+        try (FileReader reader = new FileReader(HeartStealPlugin.getInstance().getDataFolder() + "/player_sell_price_item_list.json")) {
+            ArrayList<HashMap<String, List<Map<String, Object>>>> serializedPlayerPriceList = gson.fromJson(reader, type);
+
+            for (HashMap<String,List<Map<String,Object>>> map : serializedPlayerPriceList) {
+                for (Map.Entry<String, List<Map<String, Object>>> entry : map.entrySet()) {
+                    ArrayList<ItemStack> deserializedItemStackList = new ArrayList<>();
+                    for (Map<String, Object> serializedItem : entry.getValue()) {
+                        deserializedItemStackList.add(ItemStack.deserialize(serializedItem));
+                    }
+                    HashMap<UUID, ArrayList<ItemStack>> deserializeMap = new HashMap<>();
+                    deserializeMap.put(UUID.fromString(entry.getKey()), deserializedItemStackList);
+                    playerSellItemPrice.add(deserializeMap);
+                }
+            }
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void saveData_TimeItemExpired() {
+        Gson gson = new Gson();
+
+        Type type = new TypeToken<ArrayList<HashMap<String, Long>>>() {
+        }.getType();
+
+        ArrayList<HashMap<String, Long>> serializedTimeItemExpired = new ArrayList<>();
+
+        for (HashMap<UUID, Date> map : timeItemExpired) {
+            for (Map.Entry<UUID, Date> entry : map.entrySet()) {
+                HashMap<String, Long> serialMap = new HashMap<>();
+                serialMap.put(entry.getKey().toString(), entry.getValue().getTime());
+                serializedTimeItemExpired.add(serialMap);
+            }
+        }
+
+        try (FileWriter writer = new FileWriter(HeartStealPlugin.getInstance().getDataFolder().getAbsoluteFile() + "/player_item_time_expire_data.json")) {
+            gson.toJson(serializedTimeItemExpired, type, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void loadData_TimeItemExpire() {
+        Gson gson = new Gson();
+
+        Type type = new TypeToken<ArrayList<HashMap<String, Long>>>() {
+        }.getType();
+
+        try (FileReader reader = new FileReader(HeartStealPlugin.getInstance().getDataFolder().getAbsoluteFile() + "/player_item_time_expire_data.json")) {
+            ArrayList<HashMap<String, Long>> serializedTimeItemExpire = gson.fromJson(reader, type);
+
+            for (HashMap<String, Long> map : serializedTimeItemExpire) {
+                for (Map.Entry<String, Long> entry : map.entrySet()) {
+                    UUID playerUUId = UUID.fromString(entry.getKey());
+                    Date date = new Date(entry.getValue());
+                    HashMap<UUID, Date> deserializedMap = new HashMap<>();
+                    deserializedMap.put(playerUUId, date);
+                    timeItemExpired.add(deserializedMap);
+
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void saveData() {
+        Gson gson = new Gson();
+        Type type = new TypeToken<HashMap<String, List<Map<String, Object>>>>() {
+        }.getType();
+
+        HashMap<String, List<Map<String, Object>>> serializedSellingPlayerItems = new HashMap<>();
+
+        for (Map.Entry<UUID, ArrayList<ItemStack>> entry : sellingPlayerItems.entrySet()) {
+            List<Map<String, Object>> serializedItemStackList = new ArrayList<>();
+            for (ItemStack item : entry.getValue()) {
+                serializedItemStackList.add(item.serialize());
+            }
+            serializedSellingPlayerItems.put(entry.getKey().toString(), serializedItemStackList);
+        }
+
+        try (FileWriter writer = new FileWriter("data.json")) {
+            gson.toJson(serializedSellingPlayerItems, type, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void loadData() {
+        Gson gson = new Gson();
+        Type type = new TypeToken<HashMap<String, List<Map<String, Object>>>>() {
+        }.getType();
+
+        try (FileReader reader = new FileReader("data.json")) {
+            HashMap<String, List<Map<String, Object>>> serializedSellingPlayerItems = gson.fromJson(reader, type);
+
+            for (Map.Entry<String, List<Map<String, Object>>> entry : serializedSellingPlayerItems.entrySet()) {
+                ArrayList<ItemStack> deserializedItemStackList = new ArrayList<>();
+                for (Map<String, Object> serializedItem : entry.getValue()) {
+                    deserializedItemStackList.add(ItemStack.deserialize(serializedItem));
+                }
+                sellingPlayerItems.put(UUID.fromString(entry.getKey()), deserializedItemStackList);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveAllData() {
+        saveData();
+        saveData_SellingPlayerItemList();
+        saveData_SellingPlayerPriceList();
+        saveData_TimeItemExpired();
+    }
+
+    public static void loadAllData() {
+        loadData();
+        loadData_SellingPlayerItemList();
+        loadData_SellingPlayerPriceList();
+        loadData_TimeItemExpire();
+    }
+
 }
