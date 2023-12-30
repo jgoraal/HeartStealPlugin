@@ -1,5 +1,7 @@
 package jgor.heartstealplugin.auctions;
 
+import jgor.heartstealplugin.HeartStealListener;
+import jgor.heartstealplugin.HeartStealPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -19,6 +21,12 @@ public class AuctionCommand implements CommandExecutor {
 
     private static final HashMap<UUID, ArrayList<Integer>> playerWishedAmountToRemove = new HashMap<>();
 
+    private HeartStealListener heartStealListener;
+
+    public AuctionCommand(HeartStealPlugin plugin) {
+        this.heartStealListener = plugin.getHeartStealListener();
+    }
+
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
 
@@ -29,18 +37,32 @@ public class AuctionCommand implements CommandExecutor {
 
         Player player = (Player) commandSender;
 
-        if (strings.length == 0) {
-            MarketGui.openMarketInventory(player, 1);
-        } else if (strings.length == 2 && strings[0].equals("wystaw")) {
 
-            checkTypedAmountCommand(strings, player);
+            if (strings.length == 0) {
+                if(heartStealListener.getPlayersInCombat().getOrDefault(player.getUniqueId(),false)) {
+                    player.sendMessage(ChatColor.RED + "Nie masz dostępu do rynku podczas walki");
+                } else {
+                    MarketGui.openMarketInventory(player, 1);
+                }
+            } else if (strings.length == 2 && strings[0].equals("wystaw")) {
+                if(heartStealListener.getPlayersInCombat().getOrDefault(player.getUniqueId(),false)) {
+                    player.sendMessage(ChatColor.RED + "Nie masz dostępu do rynku podczas walki");
+                } else {
+                    checkTypedAmountCommand(strings, player);
+                }
+
+            } else if (strings.length == 3 && strings[0].equalsIgnoreCase("wystaw") && strings[1].equalsIgnoreCase("stak")) {
+                if(heartStealListener.getPlayersInCombat().getOrDefault(player.getUniqueId(),false)) {
+                    player.sendMessage(ChatColor.RED + "Nie masz dostępu do rynku podczas walki");
+                } else {
+                    checkTypedStackCommand(strings, player);
+                }
 
 
-        } else if (strings.length == 3 && strings[0].equalsIgnoreCase("wystaw") && strings[1].equalsIgnoreCase("stak")) {
+            }
 
-            checkTypedStackCommand(strings, player);
 
-        }
+
 
         return true;
     }
@@ -229,4 +251,6 @@ public class AuctionCommand implements CommandExecutor {
     public static HashMap<UUID, ArrayList<ItemStack>> getPlayerSellingItems() {
         return playerSellingItem;
     }
+
+
 }

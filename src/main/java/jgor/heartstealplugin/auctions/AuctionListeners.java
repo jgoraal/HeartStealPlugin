@@ -53,6 +53,8 @@ public class AuctionListeners implements Listener {
     public static final HashMap<UUID, Integer> playerSlotWantToBuy = new HashMap<>();
 
 
+
+
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
@@ -100,12 +102,12 @@ public class AuctionListeners implements Listener {
                     } else {
                         player.closeInventory();
 
-                        if (hasSellingItems) {
-                            MarketGui.openCollectItemsInventory(player, true);
-                        }
-
-                        if (hasBuyingItems) {
+                        if (hasSellingItems && hasBuyingItems) {
                             MarketGui.openCollectItemsInventory(player, false);
+                        } else if (hasBuyingItems) {
+                            MarketGui.openCollectItemsInventory(player, false);
+                        } else {
+                            MarketGui.openCollectItemsInventory(player, true);
                         }
                     }
                 }
@@ -156,7 +158,17 @@ public class AuctionListeners implements Listener {
         } else if (player.hasMetadata(MARKET_COLLECT_ITEMS)) {
 
             if (event.getCurrentItem() != null) {
-                MarketGui.removeItemsToCollect(player.getUniqueId(), event.getSlot());
+                boolean hasSellingItems = MarketGui.sellingPlayerItems.containsKey(player.getUniqueId());
+                boolean hasBuyingItems = MarketGui.buyingPlayerItems.containsKey(player.getUniqueId());
+                if (hasSellingItems && hasBuyingItems) {
+                    MarketGui.removeBuyingItems(player.getUniqueId(),event.getSlot());
+                } else if (hasSellingItems) {
+                    MarketGui.removeSellingItems(player.getUniqueId(),event.getSlot());
+                } else if (hasBuyingItems) {
+                    MarketGui.removeBuyingItems(player.getUniqueId(),event.getSlot());
+                }
+
+
             }
 
 

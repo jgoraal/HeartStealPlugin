@@ -22,3 +22,7 @@ commands:
   rynek:
     description: MarketPlace for players
     usage: /<command>
+
+  serce:
+    description: Set player hearts
+    usage: /<command>

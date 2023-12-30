@@ -117,13 +117,13 @@ public class StuckCommand implements CommandExecutor, Listener {
     }
 
     private void randomSpawnLocation(Player player) {
-        double radiusX = 1000.0;
-        double radiusZ = 1000.0;
+        double radiusX = 1500.0;
+        double radiusZ = 1500.0;
 
         Random random = new Random();
 
-        int offsetX = random.nextInt(900) + 100;
-        int offsetZ = random.nextInt(900) + 100;
+        int offsetX = random.nextInt(1400) + 100;
+        int offsetZ = random.nextInt(1400) + 100;
 
         double newLocationX = (random.nextBoolean() ? Math.round(player.getLocation().getX()) + offsetX + 0.5 : -1 * (Math.round(player.getLocation().getX()) + offsetX + 0.5));
         double newLocationZ = (random.nextBoolean() ? Math.round(player.getLocation().getZ()) + offsetZ + 0.5 : -1 * (Math.round(player.getLocation().getZ()) + offsetZ + 0.5));
@@ -138,9 +138,8 @@ public class StuckCommand implements CommandExecutor, Listener {
 
         player.teleport(newLocation);
 
-        player.setBedSpawnLocation(newLocation,true);
 
-        player.sendMessage(ChatColor.GOLD + "New location: " + "x = " + newLocationX + " y = " + newY + " z = " + newLocationZ);
+        player.sendMessage(ChatColor.GOLD + "Zostałeś przeteleportowany do nowej lokalizacji: " + "x = " + newLocationX + " y = " + newY + " z = " + newLocationZ);
     }
 
     private boolean isLocationOnWater(Location location) {

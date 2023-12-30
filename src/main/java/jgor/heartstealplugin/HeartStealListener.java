@@ -14,10 +14,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -32,7 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class HeartStealListener implements Listener {
-    private static final Map<UUID, Double> playersHearts = new HashMap<>();
+    private final Map<UUID, Double> playersHearts = new HashMap<>();
     private static final Map<UUID, Boolean> bannedPlayers = new HashMap<>();
     private final Map<UUID, BukkitTask> combatTasks = new HashMap<>();
     private final Map<UUID, Boolean> playersInCombat = new HashMap<>();
@@ -48,15 +46,65 @@ public class HeartStealListener implements Listener {
 
         if (player == null) return;
 
-        player.sendMessage(ChatColor.BOLD + "" + ChatColor.RED + "You have lost your heart!");
+        player.sendMessage(ChatColor.BOLD + "" + ChatColor.RED + "Straciłeś jedno serce!");
 
         UUID playerUUID = player.getUniqueId();
+
+        if (playersInCombat.containsKey(playerUUID) && player.getKiller() instanceof Player) {
+            Player killer = player.getKiller();
+
+            if (killer.isOnline()) {
+                List<ItemStack> playerDrops = event.getDrops();
+
+                Inventory killerInventory = killer.getInventory();
+                killer.getInventory();
+
+                if(hasKillerFullInventory(killer)) {
+                    Iterator<ItemStack> iterator = playerDrops.iterator();
+                    while (iterator.hasNext()) {
+                        ItemStack remainingItem = iterator.next();
+                        killer.getWorld().dropItem(killer.getLocation(), remainingItem);
+                        iterator.remove();
+                    }
+
+                } else {
+                    int index = 0;
+                    for (ItemStack item : killerInventory.getStorageContents()) {
+                        if(item == null && !playerDrops.isEmpty()) {
+                            killerInventory.setItem(index,playerDrops.getFirst());
+                            playerDrops.removeFirst();
+                        }
+                        index++;
+                    }
+
+                    if(!playerDrops.isEmpty()) {
+                        for (ItemStack remainingItem : playerDrops) {
+                            killer.getWorld().dropItem(killer.getLocation(), remainingItem);
+                            playerDrops.remove(remainingItem);
+                        }
+                    }
+                }
+            }
+        }
 
         if (combatTasks.containsKey(playerUUID)) combatTasks.get(playerUUID).cancel();
 
         if (hasLastHeart(playerUUID)) banPlayer(playerUUID); //TODO FINISH THAT !!!!!!!!!!
         else removePlayerHeart(playerUUID);
 
+    }
+
+    private boolean hasKillerFullInventory(Player killer) {
+        Inventory killerInventory = killer.getInventory();
+
+
+        for (ItemStack item : killerInventory.getStorageContents()) {
+            if (item == null) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @EventHandler
@@ -214,6 +262,8 @@ public class HeartStealListener implements Listener {
         }
     }
 
+
+
     private void startCombatCountDown(Player defender, Player attacker) {
         UUID attackerUUID = attacker.getUniqueId();
         UUID defenderUUID = defender.getUniqueId();
@@ -237,7 +287,7 @@ public class HeartStealListener implements Listener {
 
     private BukkitTask startCountDown(Player player) {
         return Bukkit.getScheduler().runTaskTimer(HeartStealPlugin.getInstance(), new Runnable() {
-            double timeLeft = 10.0;
+            double timeLeft = 20.0;
 
             @Override
             public void run() {
@@ -281,9 +331,7 @@ public class HeartStealListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-
         UUID playerUUID = player.getUniqueId();
-
         if (HeartStealPlugin.getInstance().getConfig().contains("PlayerHealth." + playerUUID)) {
             double savedPlayerHealth = HeartStealPlugin.getInstance().getConfig().getDouble("PlayerHealth." + playerUUID);
             playersHearts.put(playerUUID, savedPlayerHealth);
@@ -321,10 +369,11 @@ public class HeartStealListener implements Listener {
     }
 
     public void banPlayer(UUID playerUUID) {
+        playersInCombat.replace(playerUUID,false);
         bannedPlayers.replace(playerUUID, true);
         HeartStealPlugin.getInstance().getConfig().set("PlayerBanned." + playerUUID, bannedPlayers.get(playerUUID));
         HeartStealPlugin.getInstance().saveConfig();
-        String banReason = ChatColor.BOLD + "" + ChatColor.RED + "You have lost your last heart!";
+        String banReason = ChatColor.BOLD + "" + ChatColor.RED + "Straciłeś wszystkie serca!";
         String playerName = Bukkit.getPlayer(playerUUID).getName();
         Bukkit.getBanList(BanList.Type.NAME).addBan(playerName, banReason, Date.from(Instant.now().plus(1, ChronoUnit.DAYS)), null);
         Bukkit.getPlayer(playerUUID).kickPlayer(banReason);
@@ -381,6 +430,17 @@ public class HeartStealListener implements Listener {
         plugin.saveConfig();
     }
 
+    public Map<UUID, BukkitTask> getCombatTasks() {
+        return combatTasks;
+    }
+
+    public Map<UUID, Boolean> getPlayersInCombat() {
+        return playersInCombat;
+    }
+
+    public Map<UUID, Double> getPlayersHearts() {
+        return playersHearts;
+    }
 
 }
 

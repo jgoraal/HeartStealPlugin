@@ -21,7 +21,18 @@ public class UnStuckCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
-        if(!(commandSender instanceof Player)) return true;
+        if(!(commandSender instanceof Player)) {
+            if(StuckCommand.getStuckPlayers().isEmpty()) {
+                commandSender.sendMessage("Nie ma kogo odmrozic");
+                return true;
+            }
+
+            if (unstuckTask != null && !unstuckTask.isCancelled()) {
+                unstuckTask.cancel();
+            }
+
+            unstuckTask = unstuckPlayers(StuckCommand.getStuckPlayers());
+        }
 
         Player player = ((Player) commandSender).getPlayer();
 

@@ -85,12 +85,12 @@ public class RedemptionItem implements Listener {
                     Bukkit.getBanList(BanList.Type.NAME).pardon(playerName); //TODO CONTINUEEE !!!!!!!!!
                     //HeartStealListener.unbanPlayer(playerUUID);
                     for (Player online : Bukkit.getOnlinePlayers()) {
-                        online.sendTitle(ChatColor.GOLD + "!UWAGA! Wskrzeszono gracza !Uwaga!",ChatColor.GRAY + playerName + " może teraz wrócić",10,25,35);
+                        online.sendTitle(ChatColor.GOLD + "UWAGA! Wskrzeszono gracza",ChatColor.GRAY + playerName + " może teraz wrócić",10,25,35);
                     }
                 } else {
                     player.sendMessage(ChatColor.RED + "Nie znaleziono takiego gracza!");
-                    Bukkit.getScheduler().runTaskLater(HeartStealPlugin.getInstance(), () -> player.getInventory().removeItem(player.getInventory().getItemInMainHand()), 1L);
-                    Bukkit.getScheduler().runTaskLater(HeartStealPlugin.getInstance(), () -> player.getInventory().setItemInMainHand(book), 1L);
+                    Bukkit.getScheduler().runTaskLater(HeartStealPlugin.getInstance(), () -> player.getInventory().removeItem(player.getInventory().getItemInMainHand()), 2L);
+                    Bukkit.getScheduler().runTaskLater(HeartStealPlugin.getInstance(), () -> player.getInventory().setItemInMainHand(book), 2L);
                 }
             }
         } else {
