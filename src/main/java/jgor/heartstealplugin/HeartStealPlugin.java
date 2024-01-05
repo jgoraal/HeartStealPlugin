@@ -9,6 +9,7 @@ import jgor.heartstealplugin.auctions.AuctionListeners;
 import jgor.heartstealplugin.auctions.MarketGui;
 import jgor.heartstealplugin.fireSpreadCancel.FireSpreadCancel;
 import jgor.heartstealplugin.restore.heart.command.RestoreHeartCommand;
+import jgor.heartstealplugin.start.protection.StartProtection;
 import jgor.heartstealplugin.stone.drop.StoneDrop;
 import jgor.heartstealplugin.toggle.teleport.end.ToggleEndTeleport;
 import jgor.heartstealplugin.vanish.Vanish;
@@ -36,7 +37,7 @@ public final class HeartStealPlugin extends JavaPlugin {
     private RestoreHeartCommand restoreHeartCommand;
     private final ToggleEndTeleport toggleEndTeleport = new ToggleEndTeleport();
     private final StoneDrop stoneDrop = new StoneDrop();
-
+    private final StartProtection startProtection = new StartProtection();
 
     @Override
     public void onEnable() {
@@ -53,6 +54,7 @@ public final class HeartStealPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(auctionListeners, this);
         getServer().getPluginManager().registerEvents(fireSpreadCancel, this);
         getServer().getPluginManager().registerEvents(toggleEndTeleport, this);
+        getServer().getPluginManager().registerEvents(startProtection, this);
         //getServer().getPluginManager().registerEvents(stoneDrop, this);
         getCommand("stuck").setExecutor(stuckCommand);
         getCommand("undostuck").setExecutor(unStuckCommand);
@@ -91,5 +93,5 @@ public final class HeartStealPlugin extends JavaPlugin {
     public HeartStealListener getHeartStealListener() {
         return heartStealListener;
     }
-
+    
 }

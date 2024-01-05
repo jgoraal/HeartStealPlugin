@@ -2,6 +2,7 @@ package jgor.heartstealplugin.UnstuckCommand;
 
 import StuckCommand.StuckCommand;
 import jgor.heartstealplugin.HeartStealPlugin;
+import jgor.heartstealplugin.start.protection.StartProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -18,6 +19,9 @@ import java.util.UUID;
 public class UnStuckCommand implements CommandExecutor {
 
     private BukkitTask unstuckTask;
+    private StartProtection startProtection;
+
+
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
@@ -77,9 +81,11 @@ public class UnStuckCommand implements CommandExecutor {
                         StuckCommand.getStuckPlayers().get(playerUUID).removePassenger(player);
                         StuckCommand.getStuckPlayers().get(playerUUID).remove();
                         Bukkit.getPlayer(playerUUID).setAllowFlight(false);
+                        //startProtection.getPlayerProtectionMap().put(playerUUID,startProtection.protectionTask(player,300));
                         iterator.remove(); // Usunięcie elementu za pomocą iteratora
                     }
                     unstuckTask.cancel();
+
                 }
             }
         }, 1L, 20L);
