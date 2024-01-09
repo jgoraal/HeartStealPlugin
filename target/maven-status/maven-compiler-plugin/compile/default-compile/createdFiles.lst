@@ -1,0 +1,12 @@
+jgor\heartstealplugin\CraftingSpecialItemsGUI\CraftingSpecialItemsGUI.class
+jgor\heartstealplugin\HeartStealListener.class
+jgor\heartstealplugin\HeartStealListener$1.class
+jgor\heartstealplugin\UnstuckCommand\UnStuckCommand.class
+jgor\heartstealplugin\vanish\VanishListener.class
+jgor\heartstealplugin\HeartItem.class
+jgor\heartstealplugin\CraftingSpecialItemsGUI\GuiListener.class
+jgor\heartstealplugin\RedemptionItem.class
+jgor\heartstealplugin\vanish\Vanish.class
+jgor\heartstealplugin\HeartStealPlugin.class
+StuckCommand\StuckCommand.class
+jgor\heartstealplugin\UnstuckCommand\UnStuckCommand$1.class

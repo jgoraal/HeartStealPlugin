@@ -366,7 +366,10 @@ public class MarketGui implements Serializable {
         //TODO Expire item time
         HashMap<UUID, Date> expiredTime = new HashMap<>();
 
-        expiredTime.put(playerUUID, Date.from(Instant.now().plus(5, ChronoUnit.HOURS)));
+
+        expiredTime.put(playerUUID, Date.from(Instant.now().plus(24, ChronoUnit.HOURS)));
+
+
         timeItemExpired.add(expiredTime);
         //TODO Expire item time
 
@@ -420,7 +423,13 @@ public class MarketGui implements Serializable {
         // Remove the item from playerSellItemList and playerSellItemPrice
         if (indexToRemove != -1) {
             Player playerTosendMessage = Bukkit.getPlayer(playerUUID);
-            playerTosendMessage.sendTitle(ChatColor.RED + "Twój przedmiot na rynku wygasł", ChatColor.GOLD + "Odbierz przedmioty na /rynek", 10, 35, 20);
+
+
+            if (playerTosendMessage != null) {
+                playerTosendMessage.sendTitle(ChatColor.RED + "Twój przedmiot na rynku wygasł", ChatColor.GOLD + "Odbierz przedmioty na /rynek", 10, 35, 20);
+            }
+
+
 
             if (expiredItems.containsKey(playerUUID)) {
                 ItemStack itemToRemove = playerSellItemList.get(indexToRemove).get(playerUUID).clone();
@@ -1003,7 +1012,6 @@ public class MarketGui implements Serializable {
                     HashMap<UUID, Date> deserializedMap = new HashMap<>();
                     deserializedMap.put(playerUUId, date);
                     timeItemExpired.add(deserializedMap);
-
                 }
             }
 
