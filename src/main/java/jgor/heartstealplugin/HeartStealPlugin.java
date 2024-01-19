@@ -62,6 +62,7 @@ public final class HeartStealPlugin extends JavaPlugin {
         getCommand("vanish").setExecutor(vanish);
         auctionCommand = new AuctionCommand(this);
         getCommand("rynek").setExecutor(auctionCommand);
+        getCommand("rynek").setTabCompleter(auctionCommand);
         restoreHeartCommand = new RestoreHeartCommand(this);
         getCommand("serce").setExecutor(restoreHeartCommand);
         MarketGui.scheduleItemExpirationCheck();

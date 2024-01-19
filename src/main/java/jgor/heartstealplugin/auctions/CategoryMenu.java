@@ -30,7 +30,7 @@ public class CategoryMenu {
             putItemsInCorrectCategory(categoryName, categoryMenu, page);
 
             SellGui.schematicGuiDesign(categoryMenu);
-            SellGui.createBottomNotPaged(categoryMenu, false, true);
+            SellGui.createBottomNotPaged(categoryMenu, false, !categoryName.equals(ChatColor.BLUE + "Specjalne Itemy"));
             SellGui.placeStatusItem(categoryMenu, player);
 
             player.openInventory(categoryMenu);

@@ -30,6 +30,8 @@ public class ItemDeserialiser {
 
                         if (metaSerialized.containsKey("displayName")) {
 
+                            //Bukkit.getLogger().info("Co wyswietla displayname: " + displayname.get("extra"));
+
                             itemMeta.setDisplayName("Debil");
                         }
 

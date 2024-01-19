@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="HeartStealPlugin:jar">
-    <output-path>$USER_HOME$/OneDrive - put.poznan.pl/Pulpit/paper/plugins</output-path>
+    <output-path>$USER_HOME$/Desktop/serwer/plugins</output-path>
     <root id="archive" name="HeartStealPlugin.jar">
       <element id="module-output" name="HeartStealPlugin" />
     </root>

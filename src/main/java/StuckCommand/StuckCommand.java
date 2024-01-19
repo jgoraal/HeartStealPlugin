@@ -1,5 +1,6 @@
 package StuckCommand;
 
+import jgor.heartstealplugin.start.protection.StartProtection;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -99,6 +100,8 @@ public class StuckCommand implements CommandExecutor, Listener {
 
             randomSpawnLocation(player);
 
+            StartProtection.setNameTagToPlayer(player);
+
             Location loc = player.getLocation();
             loc.setY(loc.getY() - 1.0);
             ArmorStand armorStand = player.getWorld().spawn(loc, ArmorStand.class);
@@ -113,6 +116,10 @@ public class StuckCommand implements CommandExecutor, Listener {
                     ChatColor.GRAY + "Miłej zabawy!",
                     10, 40, 20
             );
+
+            if (StartProtection.playerProtectionTimeMap.containsKey(player.getUniqueId())) {
+                StartProtection.startOrResumeProtectionTimer(player);
+            }
         }
     }
 

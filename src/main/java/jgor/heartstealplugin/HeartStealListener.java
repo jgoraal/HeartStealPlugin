@@ -1,6 +1,7 @@
 package jgor.heartstealplugin;
 
 
+import jgor.heartstealplugin.start.protection.StartProtection;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -186,7 +187,8 @@ public class HeartStealListener implements Listener {
             }
         }
 
-        startCombatCountDown(damagedPlayer, damagerPlayer);
+        if (!StartProtection.playerProtectionMap.containsKey(damagedPlayer) || !StartProtection.playerProtectionMap.containsKey(damagerPlayer))
+            startCombatCountDown(damagedPlayer, damagerPlayer);
     }
 
     @EventHandler

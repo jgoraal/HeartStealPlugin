@@ -22,39 +22,56 @@ import java.util.UUID;
 
 public class StartProtection implements Listener {
 
-    private final String prefix = "&#ffcf04[&#ffb807O&#ffa20ac&#ff8b0ch&#ff750fr&#ff5e12o&#ff4715n&#ff3117a&#ff1a1a] ";
-    private final Map<UUID, BukkitTask> playerProtectionMap = new HashMap<>();
+    private static final String prefix = "&#ffcf04[&#ffb807O&#ffa20ac&#ff8b0ch&#ff750fr&#ff5e12o&#ff4715n&#ff3117a&#ff1a1a] ";
+    public static final Map<UUID, BukkitTask> playerProtectionMap = new HashMap<>();
 
-    private final Map<UUID, Integer> playerProtectionTimeMap = new HashMap<>();
-    private static final int FULL_PROTECTION_TIME = 100;
+    public static final Map<UUID, Integer> playerProtectionTimeMap = new HashMap<>();
+    private static final int FULL_PROTECTION_TIME = 300;
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        //Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
-        Player player = event.getPlayer();
-        
-        //Criteria protection = Criteria.create("START_PROTECTION");
+//    @EventHandler(ignoreCancelled = true)
+//    public void onPlayerJoin(PlayerJoinEvent event) {
+//        //Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
+//        Player player = event.getPlayer();
+//
+//        //Criteria protection = Criteria.create("START_PROTECTION");
+//
+//        //Objective objective = board.registerNewObjective(HeartStealPlugin.getInstance() + "_start_protection", "");
+//        //objective.setDisplaySlot(DisplaySlot.BELOW_NAME);
+//
+//        NametagEdit.getApi().setPrefix(player, prefix + ChatColor.RESET);
+//
+//        if (playerProtectionTimeMap.containsKey(player.getUniqueId())) {
+//            int remainingProtectionTime = playerProtectionTimeMap.get(player.getUniqueId());
+//
+//            //playerProtectionMap.put(player.getUniqueId(),protectionTask(player,objective,board,remainingProtectionTime));
+//            playerProtectionMap.put(player.getUniqueId(), protectionTask(player, remainingProtectionTime));
+//        } else {
+//            playerProtectionTimeMap.put(player.getUniqueId(), FULL_PROTECTION_TIME);
+//            //playerProtectionMap.put(player.getUniqueId(), protectionTask(player,objective,board, FULL_PROTECTION_TIME));
+//            playerProtectionMap.put(player.getUniqueId(), protectionTask(player, FULL_PROTECTION_TIME));
+//        }
+//
+//    }
 
-        //Objective objective = board.registerNewObjective(HeartStealPlugin.getInstance() + "_start_protection", "");
-        //objective.setDisplaySlot(DisplaySlot.BELOW_NAME);
+   public static void setNameTagToPlayer(Player player) {
+       NametagEdit.getApi().setPrefix(player, prefix + ChatColor.RESET);
+   }
 
-        NametagEdit.getApi().setPrefix(player, prefix + ChatColor.RESET);
+   public static void startOrResumeProtectionTimer(Player player) {
+       if (playerProtectionTimeMap.containsKey(player.getUniqueId())) {
+           int remainingProtectionTime = playerProtectionTimeMap.get(player.getUniqueId());
 
-        if (playerProtectionTimeMap.containsKey(player.getUniqueId())) {
-            int remainingProtectionTime = playerProtectionTimeMap.get(player.getUniqueId());
-
-            //playerProtectionMap.put(player.getUniqueId(),protectionTask(player,objective,board,remainingProtectionTime));
-            playerProtectionMap.put(player.getUniqueId(), protectionTask(player, remainingProtectionTime));
-        } else {
-            playerProtectionTimeMap.put(player.getUniqueId(), FULL_PROTECTION_TIME);
-            //playerProtectionMap.put(player.getUniqueId(), protectionTask(player,objective,board, FULL_PROTECTION_TIME));
-            playerProtectionMap.put(player.getUniqueId(), protectionTask(player, FULL_PROTECTION_TIME));
-        }
-
-    }
+           //playerProtectionMap.put(player.getUniqueId(),protectionTask(player,objective,board,remainingProtectionTime));
+           playerProtectionMap.put(player.getUniqueId(), protectionTask(player, remainingProtectionTime));
+       } else {
+           playerProtectionTimeMap.put(player.getUniqueId(), FULL_PROTECTION_TIME);
+           //playerProtectionMap.put(player.getUniqueId(), protectionTask(player,objective,board, FULL_PROTECTION_TIME));
+           playerProtectionMap.put(player.getUniqueId(), protectionTask(player, FULL_PROTECTION_TIME));
+       }
+   }
 
 
-    public BukkitTask protectionTask(Player player, int remainingTime) {
+    public static BukkitTask protectionTask(Player player, int remainingTime) {
         return Bukkit.getScheduler().runTaskTimer(HeartStealPlugin.getInstance(), new Runnable() {
             int timer = remainingTime;
             boolean toggle = true;
@@ -171,11 +188,6 @@ public class StartProtection implements Listener {
         }
     }
 
-    public Map<UUID, BukkitTask> getPlayerProtectionMap() {
-        return playerProtectionMap;
-    }
 
-    public Map<UUID, Integer> getPlayerProtectionTimeMap() {
-        return playerProtectionTimeMap;
-    }
+
 }

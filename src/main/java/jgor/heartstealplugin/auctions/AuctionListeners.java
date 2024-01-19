@@ -197,7 +197,8 @@ public class AuctionListeners implements Listener {
                 playerCurrentPage.remove(player.getUniqueId());
 
             } else if (event.getSlot() == 4) {
-                FinalConfirmGUI.openFinalConfirmGui(player);
+                if (!event.getCurrentItem().getType().equals(Material.GRAY_STAINED_GLASS_PANE))
+                    FinalConfirmGUI.openFinalConfirmGui(player);
             }
 
         } else if (player.hasMetadata(SELL_GUI_CATEGORY)) {
@@ -224,7 +225,7 @@ public class AuctionListeners implements Listener {
                 playerCurrentCategory.remove(player.getUniqueId());
                 playerCurrentPage.remove(player.getUniqueId());
                 if (event.getCurrentItem() != null || !event.getCurrentItem().isSimilar(new ItemStack(Material.AIR))) {
-                    playerItemSellAmount.put(player.getUniqueId(), event.getCurrentItem());
+                    playerItemSellAmount.put(player.getUniqueId(), event.getCurrentItem());//TODO TUTAJ!!!!!!!!!!!!!!!!!!!!!!!!!!
                     ConfirmSellGui.openConfirmSellGui(player, event.getCurrentItem());
                 }
 

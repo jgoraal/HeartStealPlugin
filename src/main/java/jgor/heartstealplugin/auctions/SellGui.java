@@ -1,6 +1,7 @@
 package jgor.heartstealplugin.auctions;
 
 import jgor.heartstealplugin.HeartStealPlugin;
+import jgor.heartstealplugin.PlayerLocalOffer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -25,6 +26,72 @@ public class SellGui {
 
 
     public static void openSellGui(Player player) {
+        Inventory sellGui = Bukkit.createInventory(player, 9 * 6, Title);
+
+        schematicGuiDesign(sellGui);
+        categoryNames.clear();
+        setCategoryItems(sellGui);
+
+        createBottomNotPaged(sellGui, false, false);
+
+        if (AuctionListeners.playerPriceItemList.containsKey(player.getUniqueId())) {
+            ItemStack playerConfirmSellButton = new ItemStack(Material.PLAYER_HEAD);
+            SkullMeta buttonMeta = (SkullMeta) playerConfirmSellButton.getItemMeta();
+            buttonMeta.setOwningPlayer(player);
+
+
+            buttonMeta.setDisplayName(ChatColor.GOLD + "✮ Kliknij mnie, żeby potwierdźić sprzedaż ✮");
+
+            UUID playerUUID = player.getUniqueId();
+
+            ArrayList<ItemStack> sellingItems = AuctionCommand.getPlayerSellingItems().get(playerUUID);
+            ArrayList<Integer> wishedAmounts = AuctionCommand.getPlayerWishedAmountToRemove().get(playerUUID);
+
+            int lastIndex = sellingItems.size() - 1;
+            ItemStack item = sellingItems.get(lastIndex);
+            int amount = wishedAmounts.get(lastIndex);
+
+            buttonMeta.setLore(Arrays.asList(
+                    " ",
+                    ChatColor.GRAY + "Oferujesz " + ChatColor.RESET + ChatColor.GREEN + getDisplayName(item) + ChatColor.RESET + ChatColor.GRAY + " w ilości " + ChatColor.RESET + ChatColor.GREEN + amountToReadable(amount),
+                    " ",
+                    ChatColor.GRAY + "❁ Cena ❁"
+            ));
+
+            if (AuctionListeners.playerPriceItemList.containsKey(playerUUID)) {
+                List<String> lore = buttonMeta.getLore();
+
+                ArrayList<ItemStack> price = AuctionListeners.playerPriceItemList.get(playerUUID);
+
+                for (ItemStack i : price) {
+                    lore.add(ChatColor.GREEN + "   ✔ " + ChatColor.RESET + ChatColor.GRAY + "- " + ChatColor.RESET + ChatColor.DARK_PURPLE + getDisplayName(i) + ChatColor.RESET + ChatColor.GRAY + " ilość " + ChatColor.RESET + ChatColor.DARK_PURPLE + amountToReadable(i.getAmount()));
+                }
+
+                lore.add(" ");
+                int remainSize = 5 - price.size();
+                lore.add(ChatColor.GRAY + "Możesz dodać jescze " + ChatColor.RESET + ChatColor.DARK_AQUA + remainSize + ChatColor.RESET + ChatColor.GRAY + " itemy !");
+                int remainAmount = AuctionListeners.MAX_ITEM_AMOUNT - AuctionListeners.sumPlayerItemAmount.get(playerUUID);
+                lore.add(ChatColor.GRAY + "Nie możesz przekroczyć " + ChatColor.RESET + ChatColor.DARK_AQUA + remainAmount + ChatColor.RESET + ChatColor.GRAY + " ilości itemów !");
+                lore.add(" ");
+                lore.add(compreserTo64(remainAmount));
+
+                buttonMeta.setLore(lore);
+            }
+
+            playerConfirmSellButton.setItemMeta(buttonMeta);
+            sellGui.setItem(4, playerConfirmSellButton);
+
+        }
+
+        placeStatusItem(sellGui, player);
+
+        fillEmptySlots(sellGui, fillItem());
+
+        player.openInventory(sellGui);
+        player.setMetadata(AuctionListeners.SELL_GUI, new FixedMetadataValue(HeartStealPlugin.getInstance(), sellGui));
+    }
+
+    public static void openSellGui(Player player, String s) {
         Inventory sellGui = Bukkit.createInventory(player, 9 * 6, Title);
 
         schematicGuiDesign(sellGui);
@@ -223,6 +290,21 @@ public class SellGui {
                 meta.setDisplayName(ChatColor.BOLD + "" + ChatColor.GREEN + "Sprzedajesz: " +
                         getDisplayName(item) + " w ilości " + amount);
             }
+
+            meta.setLore(Arrays.asList(
+                    "",
+                    "◆ Można wybrać maksymalnie 5 itemów ◆",
+                    ChatColor.BOLD + "" + ChatColor.BLUE + "▣ Wybrane itemy nie mogą przekroczyć łącznie 36 stacków ▣"
+            ));
+
+            status.setItemMeta(meta);
+
+            menu.setItem(49, status);
+        } else if (AuctionCommand.getPlayerLocalOffers().containsKey(playerUUID)) {
+            PlayerLocalOffer playerLocalOffer = AuctionCommand.getPlayerLocalOffers().get(playerUUID).getLast();
+
+            meta.setDisplayName(ChatColor.BOLD + "" + ChatColor.GREEN + "Sprzedajesz: " +
+                    getDisplayName(playerLocalOffer.item()) + " w ilości ofert " + playerLocalOffer.offerAmount() + " w ilości " + playerLocalOffer.itemAmountInOneOffer());
 
             meta.setLore(Arrays.asList(
                     "",

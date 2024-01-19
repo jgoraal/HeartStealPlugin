@@ -22,33 +22,28 @@ public class UnStuckCommand implements CommandExecutor {
     private StartProtection startProtection;
 
 
-
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
-        if(!(commandSender instanceof Player)) {
-            if(StuckCommand.getStuckPlayers().isEmpty()) {
+        if (!(commandSender instanceof Player)) {
+            if (StuckCommand.getStuckPlayers().isEmpty()) {
                 commandSender.sendMessage("Nie ma kogo odmrozic");
                 return true;
             }
 
-            if (unstuckTask != null && !unstuckTask.isCancelled()) {
-                unstuckTask.cancel();
+        } else {
+            Player player = ((Player) commandSender).getPlayer();
+
+            if (!player.isOp()) {
+                player.sendMessage(ChatColor.RED + "You can't use that command!");
+                return true;
             }
 
-            unstuckTask = unstuckPlayers(StuckCommand.getStuckPlayers());
+            if (StuckCommand.getStuckPlayers().isEmpty()) {
+                player.sendMessage("Nie ma kogo odmrozic");
+                return true;
+            }
         }
 
-        Player player = ((Player) commandSender).getPlayer();
-
-        if(!player.isOp()) {
-            player.sendMessage(ChatColor.RED + "You can't use that command!");
-            return true;
-        }
-
-        if(StuckCommand.getStuckPlayers().isEmpty()) {
-            player.sendMessage("Nie ma kogo odmrozic");
-            return true;
-        }
 
         if (unstuckTask != null && !unstuckTask.isCancelled()) {
             unstuckTask.cancel();
@@ -81,6 +76,7 @@ public class UnStuckCommand implements CommandExecutor {
                         StuckCommand.getStuckPlayers().get(playerUUID).removePassenger(player);
                         StuckCommand.getStuckPlayers().get(playerUUID).remove();
                         Bukkit.getPlayer(playerUUID).setAllowFlight(false);
+                        StartProtection.startOrResumeProtectionTimer(player);
                         //startProtection.getPlayerProtectionMap().put(playerUUID,startProtection.protectionTask(player,300));
                         iterator.remove(); // Usunięcie elementu za pomocą iteratora
                     }
@@ -90,7 +86,6 @@ public class UnStuckCommand implements CommandExecutor {
             }
         }, 1L, 20L);
     }
-
 
 
 }

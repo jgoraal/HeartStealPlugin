@@ -21,12 +21,14 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
 public class MarketGui implements Serializable {
 
@@ -817,12 +819,7 @@ public class MarketGui implements Serializable {
                     sellingPlayerItems.remove(uniqueId);
                 }
             }
-
         }
-    }
-
-    public static void removeItemsToCollect(UUID uniqueId, int slot) {
-
 
     }
 
@@ -1166,6 +1163,5 @@ public class MarketGui implements Serializable {
         loadData_SellingPlayerPriceList();
         loadData_TimeItemExpire();
     }
-
 
 }
